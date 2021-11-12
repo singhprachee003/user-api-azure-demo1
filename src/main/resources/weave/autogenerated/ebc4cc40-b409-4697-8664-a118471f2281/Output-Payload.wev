@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_ebc4cc40_b409_4697_8664_a118471f2281_Output_Payload = Array<{  uid?: String,   source_location?: String,   advance_notify_time_min?: Number,   updated_timestamp?: String,   alert_notification?: Boolean,   creation_timestamp?: String,   destination_location?: String,   to_time?: String,   from_time?: String,   sid?: Number,   status?: String,   _?: Any} {"description": "Data for Subscription for Alert notitication"}>
+

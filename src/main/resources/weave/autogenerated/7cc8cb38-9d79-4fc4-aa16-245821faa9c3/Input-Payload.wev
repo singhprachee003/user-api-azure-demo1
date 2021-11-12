@@ -1,0 +1,15 @@
+%dw 2.0
+
+type auto_7cc8cb38_9d79_4fc4_aa16_245821faa9c3_Input_Payload = {
+  firstName: String, 
+  lastName: String, 
+  lastUpdated: String, 
+  mobilePhone: String, 
+  created: String, 
+  id: String, 
+  login: String, 
+  email: String, 
+  status: String, 
+  _?: Any
+} {"description": "DataType of user registering for the Serivices"}
+

@@ -1,0 +1,15 @@
+#%RAML 1.0 DataType
+description: "Data for Subscription for Alert notitication"
+type: object
+properties:
+  sid?: integer
+  uid?: string
+  status?: string
+  source_location?: string
+  destination_location?: string
+  from_time?: time-only
+  to_time?: time-only
+  advance_notify_time_min?: integer
+  creation_timestamp?: datetime-only
+  updated_timestamp?: datetime-only
+  alert_notification?: boolean

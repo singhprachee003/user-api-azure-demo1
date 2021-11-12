@@ -1,0 +1,12 @@
+#%RAML 1.0 DataType
+description: "Datatype for Alert notitication"
+type: object
+properties:
+  alert_id?: integer
+  subscription_id: integer
+  delay_type: string
+  email_sent: boolean
+  delay_reason?: string
+  delay_time: integer
+  service_id: string
+  creation_date?: datetime-only

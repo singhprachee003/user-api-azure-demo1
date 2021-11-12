@@ -1,0 +1,14 @@
+%dw 2.0
+
+type auto_155463aa_2ab1_442b_8d9e_8cae6c86ed95_Input_Payload = {
+  subscription_id: Number, 
+  delay_type: String, 
+  email_sent: Boolean, 
+  alert_id?: Number, 
+  service_id: String, 
+  creation_date?: String, 
+  delay_reason?: String, 
+  delay_time: Number, 
+  _?: Any
+} {"description": "Datatype for Alert notitication"}
+

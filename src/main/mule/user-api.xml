@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
+    <http:listener-config name="user-api-2-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="user-api-2-config" api="user-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="0f649178-7e17-427a-89a7-dc7aea31e9ad" file="config.yaml" />
+    <flow name="user-api-2-main">
+        <http:listener config-ref="user-api-2-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="user-api-2-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="user-api-2-console">
+        <http:listener config-ref="user-api-2-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="user-api-2-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="delete:\users\registration\(ID):user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="49d099b5-2821-4b58-aed4-5e57c47f7ecb" name="User-DeactivateUserByUserID" />
+    </flow>
+    <flow name="delete:\users\registration\(ID)\subscription\(subscriptionID):user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="fd00406d-05bf-4fbb-bc8b-07b04b912a9e" name="User-DeactivateSubscriptionBySubscriptionID" />
+    </flow>
+    <flow name="patch:\users\registration\(ID):application\json:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="4e5eff42-2a05-4b08-8807-e0f1188f0361" name="User-DetailUpdate" />
+    </flow>
+    <flow name="patch:\users\registration\(ID)\subscription\(subscriptionID):application\json:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="095bd032-3f7b-4ee4-91c2-b309890e4b2e" name="User-SubscriptiondetailUpdate" />
+    </flow>
+    <flow name="get:\users\registration\(ID)\subscription\(subscriptionID)\alert:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="0d98bbc7-59c5-48dc-85f7-cf8d3f52fcde" name="User-RetriveSubscriptionBySubscriptionID" />
+    </flow>
+    <flow name="get:\users\registration\alerts:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="fd1afe60-2016-45c1-9373-cea7068bc9ee" name="User-RetriveAllAlerts" />
+    </flow>
+    <flow name="get:\users\registration:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="b88fa321-c5e7-44d1-9165-20b4e65d44b7" name="User-RetrieveRegisterUsers" />
+    </flow>
+    <flow name="get:\users\registration\(ID)\subscription:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="72c6c066-374b-4099-9a5f-02ac378b3932" name="User-RetrieveRegisterUserByID" />
+    </flow>
+    <flow name="get:\users\registration\(ID):user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="ec70691b-3163-4f12-afc5-f10ac206d418" name="User-RetrieveRegisterUserByID" />
+    </flow>
+    <flow name="get:\users\registration\(ID)\subscription\(subscriptionID)\alert\(alertID):user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="89a554f8-1b37-4142-b582-1774f5ace1e9" name="User-RetriveAlertByAlertID" />
+    </flow>
+    <flow name="get:\users\registration\(ID)\subscription\(subscriptionID):user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="a7767465-3597-41c1-be20-06ae42ce39a2" name="User-RetriveSubscriptionBySubscriptionID" />
+    </flow>
+    <flow name="post:\users\registration\(ID)\subscription\(subscriptionID)\alert:application\json:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="82284a84-9682-466d-b6ec-11799c4ae351" name="User-CreateAlert" />
+    </flow>
+    <flow name="post:\users\registration:application\json:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="3a0c2c2a-47f1-43ca-8732-93f18fad3382" name="User-Registration" />
+    </flow>
+    <flow name="post:\users\registration\(ID)\subscription:application\json:user-api-2-config">
+        <flow-ref doc:name="Flow Reference" doc:id="f903846e-f0b7-4db0-a309-2fdaf7309ac7" name="User-CreateSubscription" />
+    </flow>
+</mule>

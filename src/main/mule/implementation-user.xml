@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="423c18bc-311f-4c1f-81a1-de4d6765b0e3" >
+		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.user}" password="${database.password}" database="${database.Database}" />
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="6dc69330-4740-4fa0-b136-21257d941f86" file="config.yaml" />
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="e5d24f7e-5845-45b7-afc1-1457d51e7d29" applicationName="mytrains-user_api" applicationVersion="1.0.0-SNAPSHOT" environment="SANDBOX" />
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="d583d6d6-1050-4031-b71d-0b54e5279864" >
+		<salesforce:basic-connection username="a.singhprachi@gmail.com" password="Orangepulp18" securityToken="y0r6YGpvKnEdWjQ2mie8CyfW" />
+	</salesforce:sfdc-config>
+	<flow name="User-Registration" doc:id="7cc8cb38-9d79-4fc4-aa16-245821faa9c3" initialState="started">
+		<json-logger:logger doc:name="Logger" doc:id="c8a681db-8fb8-4d9e-aa4e-8bf311af4f2a" config-ref="JSON_Logger_Config" message="inserting the new users"/>
+		<db:insert doc:name="Insert Customer" doc:id="9607ef8a-f217-445b-846a-51a3778ec7cf" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO USER_SAP
+(UID,
+FirstName,
+LastName,
+email,
+phonenumber,
+created_timestamp,
+updated_timestamp,
+status)VALUES(:uid,:firstName,:lastName,:email,:phonenumber,:created_timestamp,:updated_timestamp,:status)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+ "uid": payload.id,
+ "firstName": payload.firstName,
+ "lastName": payload.lastName,
+ "email": payload.email,
+ "phonenumber": payload.mobilePhone,
+ "created_timestamp": now(),
+ "updated_timestamp": now(),
+ "status": payload.status default "Active"
+ }]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="19fbb8d5-9b78-4b4b-b765-36b3098d325b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Logger" doc:id="d8e23f75-5a0f-457c-b1e6-d154c4f9151c" config-ref="JSON_Logger_Config" message="user's created"/>
+	</flow>
+	<flow name="User-CreateSubscription" doc:id="50df97be-6e99-4414-ae35-2f1cf8073869" initialState="stopped">
+		<db:insert doc:name="Insert Customer Subscription" doc:id="19fe28da-1e3a-4f0b-8349-0d7ebf7a72bf" autoGenerateKeys="true" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO SUBSCRIPTION_SAP
+(UID,
+STATUS,
+SOURCE_LOCATION,
+DESTINATION_LOCATION,
+FROM_TIME,
+TO_TIME,
+ADVANCE_NOTIFY_TIME_MIN,
+CREATION_TIMESTAMP,
+UPDATED_TIMESTAMP,
+ALTER_NOTIFICATION)VALUES(:uid,:status,:source_location,:destination_location,:from_time,:to_time,:advance_notify_time_min,:creation_timestamp,:updated_timestamp,:alert_notification)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+ "uid": payload.id,
+ "status":payload.status,
+ "source_location": payload.source_location,
+ "destination_location": payload.destination_location,
+ "from_time": payload.from_time as Time,
+ "to_time": payload.to_time as Time ,
+ "advance_notify_time_min": payload.advance_notify_time_min,
+ "creation_timestamp": now(),
+ "updated_timestamp": now(),
+ "alert_notification":payload.alert_notification
+ }]]]></db:input-parameters>
+			<db:auto-generated-keys-column-indexes >
+				<db:auto-generated-keys-column-index value="1" />
+			</db:auto-generated-keys-column-indexes>
+			<db:auto-generated-keys-column-names >
+				<db:auto-generated-keys-column-name value="SUBSCRIPTION_ID" />
+			</db:auto-generated-keys-column-names>
+		</db:insert>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="a87a5271-4385-493d-8fe5-4497dae7db1d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-CreateAlert" doc:id="155463aa-2ab1-442b-8d9e-8cae6c86ed95" initialState="stopped">
+		<db:insert doc:name="Insert Customer Alert" doc:id="c5843d82-2e2d-4654-b8cb-46321e6241f4" autoGenerateKeys="true" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO ALERT_SAP
+(SUBSCRIPTION_ID,
+DELAY_TYPE,
+EMAIL_SENT,
+DELAY_REASON,
+DELAY_TIME,
+SERVICE_ID,
+CREATION_DATE)VALUES(:subscription_id,:delay_type,:email_sent,:delay_reason,:delay_time,:service_id,:creation_date)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+"subscription_id": payload.subscription_id,
+"delay_type": payload.delay_type,
+"email_sent": payload.email_sent,
+"delay_reason": payload.delay_reason,
+"delay_time": payload.delay_time,
+"service_id": payload.service_id,
+"creation_date": payload.creation_date
+}]]]></db:input-parameters>
+			<db:auto-generated-keys-column-indexes >
+				<db:auto-generated-keys-column-index value="1" />
+			</db:auto-generated-keys-column-indexes>
+			<db:auto-generated-keys-column-names >
+				<db:auto-generated-keys-column-name value="ALERT_ID" />
+			</db:auto-generated-keys-column-names>
+		</db:insert>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="69563373-3e59-4812-a436-7b340350ab24" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Copy_of_Logger" doc:id="3c8d5165-0083-4784-b212-0929941a9912" />
+	</flow>
+	<flow name="User-DetailUpdate" doc:id="12bed7e8-e3b2-4fb0-b542-c53873d1ba6a" initialState="stopped">
+		<ee:transform doc:name="Transform Message" doc:id="b9f7bfbc-c191-446f-9a9c-24d44a1f69c0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var list = payload mapObject {
+"Query" : $$ ++ " = " ++ "'"++($)++"'"
+}pluck $
+---
+
+"Query" : "update USER_SAP set " ++ (list joinBy ",") ++ " where UID = '" ++ attributes.uriParams.'ID'++"'"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="ddfa8685-3a52-4a79-81d6-f903769bce3b" message="#[payload.Query]"/>
+		<db:update doc:name="Update" doc:id="d4916993-9524-446e-8cb8-8193d68b380a" config-ref="Database_Config">
+			<db:sql ><![CDATA[#[payload.Query]]]></db:sql>
+		</db:update>
+	</flow>
+	<flow name="User-RetrieveRegisterUsers" doc:id="fcbfb600-b947-4bc3-8a80-f2687af26b84" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="832024dd-2223-472d-8edb-2f809d91daef" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from USER_SAP]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="3219557a-9934-4c04-94a3-1f2b47fed167" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="logger" doc:id="253e6bf2-7754-49c5-82c2-8a203a7ea6ef" message="#[payload]"/>
+	</flow>
+	<flow name="User-RetrieveRegisterUserByID" doc:id="ebc4cc40-b409-4697-8664-a118471f2281" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="2e572b86-ef10-4663-adf3-2dedb54d566a" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from USER_SAP where UID=:ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{"ID": message.attributes.uriParams.ID}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="bcf4dd12-aa5b-4d70-801f-bbd096b27c54" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-RetriveAllSubscriptionByUserID" doc:id="55587c16-5b92-4ff4-ac4b-68b7b7d0de58" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="b830d487-808c-4c96-b714-5567cc91464a" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from SUBSCRIPTION_SAP where UID=:ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"ID": message.attributes.uriParams.ID
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="0aceee31-4ec4-4f4b-907f-c71f391c2a4c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-RetriveSubscriptionBySubscriptionID" doc:id="c6b4ff42-749d-43ea-bc33-1c6bf4decbca" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="57e1c692-0938-40b3-afa7-cdba2eb6188c" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from SUBSCRIPTION_SAP where SUBSCRIPTION_ID=:SUBSCRIPTION_ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"SUBSCRIPTION_ID": message.attributes.uriParams.subscriptionID
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="4b49d5ae-f5bb-4587-9e80-5d66acd23949" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-RetriveAllAlertsBySubscriptionID" doc:id="88fcc9b7-ea52-47a5-ac77-f57caba2e32a" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="66666693-0c72-431c-9314-4ed34ba214d4" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from ALERT_SAP where SUBSCRIPTION_ID=:SUBSCRIPTION_ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"SUBSCRIPTION_ID": message.attributes.uriParams.subscriptionID
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="3039f074-ae37-4e90-99ed-2b7b42c56d6c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-RetriveAlertByAlertID" doc:id="f5bd3236-df08-4bd4-a09e-bde9aa70e3d0" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="75fd5fa1-7cc4-4268-be43-097c0cb808d9" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from ALERT_SAP where ALERT_ID=:ALERT_ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"ALERT_ID": message.attributes.uriParams.alertID
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="cb6860fa-53eb-41bf-b790-1a3e02021e2e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-RetriveAllAlerts" doc:id="2d2f506d-287c-4682-9b72-18bf517386cd" initialState="stopped" >
+		<db:select doc:name="Select" doc:id="76e2a9ab-d0a7-431d-92b0-797506b43edf" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from ALERT_SAP]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="a732a225-affd-468f-9991-4f95206a8b69" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-DeactivateUserByUserID" doc:id="d44759bb-3390-4c83-a13b-8e58901961d9" initialState="stopped" >
+		<db:update doc:name="Update" doc:id="3ea41cdd-bcb8-4a2e-903a-187be885cfa8" config-ref="Database_Config">
+			<db:sql ><![CDATA[update USER_SAP set status="DEACTIVATE" where UID=:ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"ID": message.attributes.uriParams.ID
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Copy_of_Copy_of_Transform Message" doc:id="0951c9e2-f182-439b-aa6d-4dc7638fbf6b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-DeactivateSubscriptionBySubscriptionID" doc:id="bc229f11-e3c3-4531-9ec2-cc42b98e7428" initialState="stopped" >
+		<db:update doc:name="Update" doc:id="44e3620d-6660-47cc-97c9-f7a7e45eeb2b" config-ref="Database_Config">
+			<db:sql ><![CDATA[update SUBSCRIPTION_SAP set STATUS="DEACTIVATE" where SUBSCRIPTION_ID=:SUBSCRIPTION_ID]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	"SUBSCRIPTION_ID": message.attributes.uriParams.subscriptionID
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Copy_of_Copy_of_Transform Message" doc:id="95ebfc16-050d-4443-8440-88ba47ae36cb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="User-SubscriptiondetailUpdate" doc:id="e0457faa-1f4d-4422-bc55-07f13ad5978d" initialState="stopped" >
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="bab7523f-ec61-4705-bc68-da497f055e1d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var list = payload mapObject {
+"Query" : $$ ++ " = " ++ "'"++($)++"'"
+}pluck $
+---
+
+"Query" : "update SUBSCRIPTION_SAP set " ++ (list joinBy ",") ++ " where SUBSCRIPTION_ID = '" ++ attributes.uriParams.'subscriptionID'++"'"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Copy_of_Logger" doc:id="b87a6512-cf23-4320-994d-ee692e78c92f" message="#[payload.Query]" />
+		<db:update doc:name="Copy_of_Update" doc:id="0a0d9614-1fa8-4de1-b2a9-a87d9b1420db" config-ref="Database_Config">
+			<db:sql ><![CDATA[#[payload.Query]]]></db:sql>
+		</db:update>
+	</flow>
+	<flow name="salesforceConnection" doc:id="dcaab8f5-e974-4b4c-9fac-741c60f1958f" initialState="stopped">
+		<scheduler doc:name="Scheduler" doc:id="028999ea-db11-443c-9aff-070c57bab0a2" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" startDelay="1" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<db:select doc:name="Select" doc:id="b8231716-f848-4e7a-8b90-c060fc8e43e9" config-ref="Database_Config">
+			<db:sql ><![CDATA[select distinct u.uid as id, u.firstName, u.lastName, u.email, u.phonenumber from USER_SAP as u, SUBSCRIPTION_SAP as s
+where u.uid=s.uid and s.status="ACTIVE"]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="803a7e6d-6fbb-4473-b2be-f75b7bb121b1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="syncWithSalesforce" doc:id="646cbefd-0efc-49dc-bf2e-2d425ad514eb" >
+			<batch:process-records >
+				<batch:step name="isCustomerInSalesforce" doc:id="80f686bf-3797-4c2c-8931-00d486df635a" >
+					<ee:transform doc:name="Transform Message" doc:id="e2076b58-bac6-46a7-9bc5-6337eed2707a">
+						<ee:message>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="Salesforcerecord"><![CDATA[%dw 2.0
+output application/json
+---
+payload mapObject ( payload01 , indexOfPayload01 ) -> {
+	uid__c: payload01.id,
+    FirstName__c: payload01.firstName,
+    LastName__c: payload01.lastName,
+    phoneNumber__c: payload01.phonenumber,
+    email__c: payload01.email
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<salesforce:query doc:name="Query" doc:id="f7a73788-90a3-4d5d-910b-3000ebc2745d" config-ref="Salesforce_Config" target="StoreValues">
+						<salesforce:salesforce-query ><![CDATA[select uid__c from myTrain__c where uid__c= ':uid']]></salesforce:salesforce-query>
+						<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"uid" : payload.id
+}]]]></salesforce:parameters>
+					</salesforce:query>
+					<logger level="INFO" doc:name="Logger" doc:id="aa83d537-50a7-4f90-967f-7ab8dabc9fad" />
+				</batch:step>
+				<batch:step name="addToSalesforce" doc:id="0fc7c446-aeaa-418f-90d8-b567c1061a67" acceptExpression="[isEmpty(payload)]">
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="99a0851f-6cfa-415c-b15c-0fcfba210c4f" streaming="true">
+						<salesforce:create type="myTrain__c" doc:name="Create" doc:id="7e487da8-b36f-429e-9889-b53130e71c6b" config-ref="Salesforce_Config" />
+						<logger level="INFO" doc:name="Logger" doc:id="7764217e-c28c-4c57-bb9a-4298a7928231" />
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="7e53d69e-54d2-438b-a817-ba98271c0e2f" message="Job completed"/>
+			</batch:on-complete>
+		</batch:job>
+		<logger level="INFO" doc:name="Logger" doc:id="5a071db7-8f43-4de7-a409-b1a4283553cc" message="flow complete"/>
+	</flow>
+	<flow name="implementation-userFlow" doc:id="d9a67eb3-db24-420e-bafb-95015b9053b1" initialState="stopped">
+		<scheduler doc:name="Copy_of_Scheduler" doc:id="9e3194a5-40e2-4077-b34f-30fe30a07fb7" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="100" startDelay="1" timeUnit="MINUTES" />
+			</scheduling-strategy>
+		</scheduler>
+		<db:select doc:name="Copy_of_Select" doc:id="d01bd76c-d949-4b8f-a93d-a434ab86cde3" config-ref="Database_Config" >
+			<db:sql ><![CDATA[select distinct u.uid as id, u.firstName, u.lastName, u.email, u.phonenumber as phone from USER_SAP as u, SUBSCRIPTION_SAP as s
+where u.uid=s.uid and s.status="ACTIVE" and (u.updated_timestamp>=now() or s.creation_timestamp>=now())]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="45744833-569a-4b53-93c4-867bc6e60b85" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	fx_customer_id__c: payload01.id as String,
+	LastName: payload01.lastName,
+	FirstName: payload01.firstName,
+	MobilePhone: payload01.phone as String,
+	Email: payload01.email
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="syncCustomerWithSalesforce" doc:id="5369198c-5013-43d5-9392-52ac056f7872" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="d5209973-0ceb-4370-a385-f499938dd8c3" >
+					<salesforce:upsert objectType="Contact" doc:name="Upsert" doc:id="dc63aa8a-5651-4d45-81ac-286b9cefaa52" config-ref="Salesforce_Config" externalIdFieldName="fx_customer_id__c" />
+					<logger level="INFO" doc:name="Logger" doc:id="c33502cc-8f73-4ec6-895c-0a4e3de88367" message="#[payload]"/>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="0374e874-c56a-4538-87bd-7adb14be24da" />
+			</batch:on-complete>
+		</batch:job>
+		<ee:transform doc:name="Transform Message" doc:id="4d5aec8e-4a5c-40a0-bcec-d294db3cf8f6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="7b68c4f1-8de1-4b8c-9a38-4ce9853c33be" message="#[payload]"/>
+	</flow>
+</mule>

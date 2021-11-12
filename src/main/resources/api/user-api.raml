@@ -1,0 +1,255 @@
+#%RAML 1.0
+title: User API
+types:
+  Users: !include datatypes/UserRegisterInputDataType.raml
+  Subscribe: !include datatypes/SubscriptionDataType.raml
+  Alert: !include datatypes/AlertDataType.raml
+
+  PatchUser: !include datatypes/UserRegisterInputWithNotMandateField.raml
+
+
+
+/users:
+  /registration: 
+    post:
+      description: To add new user details
+      body:
+        application/json:
+          type: Users
+          examples:
+            output: !include examples/UserDataExample.raml  
+      responses:
+        201:
+          body:
+            application/json:
+              example:
+                message: User succesfully added
+        400:
+          body:
+            application/json:
+              example:
+                message: Error creating user
+    get:
+      description: To retrieve all users
+      responses:
+        200:
+          body:
+            application/json:
+              type: Users[]
+              examples:
+                output: !include examples/UserDataExamples.raml
+        400:
+          body:
+            application/json:
+              example:
+                message: Error retrieving User Data
+    /{ID}:
+      get:
+        description: To retrieve user by user details
+        responses:
+          200:
+            body:
+              application/json:
+                type: Users
+                examples:
+                  output: !include examples/UserDataExample.raml
+          400:
+            body:
+              application/json:
+                example:
+                  message: Error retrieving User data by ID
+      patch:
+        description: To modify user details based on ID
+        body:
+          application/json:
+            type: PatchUser
+            examples:
+              output: !include examples/UserDataExample.raml
+        responses:
+          200:
+            body:
+              application/json:
+                example:
+                  message:User data modified successfully
+      delete:
+        description: To delete the user
+        responses:
+          200:
+            body:
+              application/json:
+                example:
+                  message: User Status deactivated
+      /subscription:
+        post:
+          description: Create a new subscription by ID
+          body:
+            application/json:
+              type: Subscribe
+              examples:
+                output: !include examples/SubscriptionNoIDExample.raml
+          responses:
+            201:
+              body:
+                application/json:
+                  example:
+                    message: Subsctiption added
+            400:
+              body:
+                application/json:
+                  example:
+                    message: Error creating subscription
+        get:
+          description: To retrieve customer subscribed detail
+          responses:
+            200:
+              body:
+                application/json:
+                  type: Subscribe[]
+                  examples:
+                    output: !include examples/SubscriptionsExamples.raml
+            400:
+              body:
+                application/json:
+                  example:
+                    message: Error retrieving subscribed customer
+        /{subscriptionID}:
+          get:
+            description: To retrieve subscription detail based on customer ID
+            responses:
+              200:
+                body:
+                  application/json:
+                    type: Subscribe
+                    examples:
+                      output: !include examples/SubscriptionExample.raml
+              400:
+                body:
+                  application/json:
+                    example:
+                      message: Error retrieving subscription data
+          patch:
+            description: To modify particular Customer subscription by subscriptionID
+            body:
+              application/json:
+                type: Subscribe
+                examples:
+                  output: !include examples/SubscriptionExample.raml
+            responses:
+              200:
+                body:
+                  application/json:
+                    example:
+                      message: subscription data modified successfully
+          delete:
+            description:  To delete subscription details
+            responses:
+              200:
+                body:
+                  application/json:
+                    example:
+                      message: Subscription Details deactivated
+          /alert:
+            post:
+              body:
+                application/json:
+                  type: Alert
+                  examples:
+                    output: !include examples/AlertNoIDExample.raml
+              responses:
+                201:
+                  body:
+                    application/json:
+                      example:
+                        message: Alert Notification added successfully
+                400:
+                  body:
+                    application/json:
+                      example:
+                        message: Error creating alert
+            get:
+              description: To retrieve customer alert notification details based on subscription ID
+              responses:
+                200:
+                  body:
+                    application/json:
+                      type: Alert
+                      examples:
+                        output: !include examples/AlertExample.raml
+                400:
+                  body:
+                    application/json:
+                      example:
+                        message: Error retrieving alert data
+            /{alertID}:
+              get:
+                description: To get customer alert notification details based on alert ID
+                responses:
+                  200:
+                    body:
+                      application/json:
+                        type: Alert
+                        examples:
+                          output: !include examples/AlertExample.raml
+                  400:
+                    body:
+                      application/json:
+                        example:
+                          message: Error retrieving alert by alertID
+    /alerts:
+      get:
+        description: Get all alerts
+        responses:
+          200:
+            body:
+              application/json:
+                type: Alert[]
+                examples:
+                  output: !include examples/AlertsExamples.raml
+          400:
+              body:
+                application/json:
+                  example:
+                    message: Error retrieving
+
+
+                    
+
+
+
+
+                      
+                  
+                    
+                  
+
+
+                
+
+
+              
+
+
+
+              
+
+                    
+
+                
+
+              
+                  
+                
+
+      
+
+
+
+           
+          
+          
+      
+
+      
+        
+
+       
