@@ -241,7 +241,7 @@ payload]]></ee:set-payload>
 		<db:select doc:name="Select" doc:id="76e2a9ab-d0a7-431d-92b0-797506b43edf" config-ref="Database_Config">
 			<db:sql ><![CDATA[select * from ALERT_SAP]]></db:sql>
 		</db:select>
-		<ee:transform doc:name="Copy_of_Transform Message" doc:id="a732a225-affd-468f-9991-4f95206a8b69" >
+		<ee:transform doc:name="Transform Message" doc:id="a732a225-affd-468f-9991-4f95206a8b69" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
